@@ -56,7 +56,22 @@ Every cell also *runs* without a key:
   the leaked system prompt, the missing game state, and the forged-win check.
 
 The only cell that has to be run live is the **last** one in each notebook, which
-launches the Gradio interface.
+launches the Gradio interface. With a key set, that one cell is the only place where
+the model is actually consulted for prose.
+
+### Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `AttributeError: 'NoneType' object has no attribute 'send'` | Version 1's UI callback reused an uninitialised Gradio state | already fixed in the committed notebook; if you have an older copy, add the `if game is None:` guard to `respond()` |
+| `AttributeError: 'str' object has no attribute 'text'` | the API client and the narrator disagree about the return type | already fixed; the client now returns an `LLMReply` dataclass |
+| `429 RESOURCE_EXHAUSTED` | free-tier quota spent for the minute or the day | the client walks its model list and then degrades to engine facts |
+| `404` on every Gemini model | that model id is not on your tier | set `GEMINI_MODELS` in `.env` to a lite model |
+| Narrator text looks terse and factual | the fallback path is active | the "Last turn" panel names the provider in use |
+
+> The first two rows are the real bugs this project hit: both only appeared *with* a
+> key configured, because without one the code takes the offline branch. See §5 of
+> `docs/report.pdf`.
 
 ---
 
