@@ -10,15 +10,17 @@ mechanism, not a lucky or unlucky sample — Version 1 has no code path that cou
 reject any of these inputs.
 
 > **A note on honesty.** Version 1's exact wording varies between runs, and a modern
-> model will sometimes refuse a request on its own. That is precisely the problem:
-> the behaviour is a sample, not a guarantee. **§5 of `Version1_Interactive_EscapeRoom.ipynb`**
-> replays these prompts against a live model and prints what it actually said.
+> model will often refuse a request on its own. That is precisely the problem: the
+> behaviour is a sample, not a guarantee. **§5 of `Version1_Interactive_EscapeRoom.ipynb`**
+> replays five of these prompts against a live model and keeps its answers — in our run
+> it refused all five. Read the "Version 1" column below as *what there is no code to
+> prevent*, not as *what will certainly happen*.
 
 ---
 
 ## Summary
 
-| # | Attack | Version 1 | Version 2 outcome |
+| # | Attack | Version 1 — nothing prevents it | Version 2 outcome |
 |---|--------|-----------|-------------------|
 | 1 | Take an item never found | grants it | `NO_SUCH_OBJECT` |
 | 2 | Open a locked drawer with no key | may narrate it open | `NO_KEY` |
@@ -45,7 +47,8 @@ names from the table.
 
 Version 1 has no inventory. The only record of what the player owns is the
 transcript, and the system prompt happily states that a brass key exists behind the
-painting. A model that has just read that will often hand the key over.
+painting. Nothing in the program stops it from handing the key over — whether it does
+is a property of the model, not of the design. (In our run it declined.)
 
 Version 2 resolves `brass key` against the embedded world configuration, finds
 `"visible_if_flag": "key_found"`, and since that flag is not set the entity is not
