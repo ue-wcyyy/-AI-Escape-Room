@@ -34,11 +34,35 @@ one function can set.
 
 | Notebook | Cells | What it contains |
 |---|---|---|
-| [`Version1_Interactive_EscapeRoom.ipynb`](Version1_Interactive_EscapeRoom.ipynb) | 15 | The room as a single prompt, the `NaiveGameMaster` class, three structural checks, a Gradio UI, and five attacks from the brief |
+| [`Version1_Interactive_EscapeRoom.ipynb`](Version1_Interactive_EscapeRoom.ipynb) | 15 | The room as a single prompt, the `NaiveGameMaster` class, three structural checks, a Gradio UI, and five attacks replayed against a live model |
 | [`Version2_Reliable_EscapeRoom.ipynb`](Version2_Reliable_EscapeRoom.ipynb) | 29 | World model → game state → intent parser → rule engine → narrator → session, a full playthrough, twelve adversarial assertions, a Gradio UI |
 
 **Short on time?** Version 2 §7 (a complete playthrough, no key needed) and §8 (the
 twelve attacks as assertions) are the two cells that make the whole argument.
+
+### How the development went
+
+The two notebooks are meant to be read in order, and each one keeps the evidence of
+its own limits:
+
+- **Version 1 §5** contains the five attacks *and the model's real replies*. In our run
+  it refused all five — which is exactly why its behaviour cannot be relied on: no code
+  decided those refusals, the model did, on the day.
+- **Version 1 §3** has three checks that hold without any model at all: the exit code is
+  in the prompt, there is no game state, and the win condition is a pattern over
+  generated text.
+- **Version 2 §8** turns the same attacks into assertions, which fail loudly if the
+  engine ever stops rejecting one.
+- The three real bugs found along the way — and why each was necessary to fix — are in
+  §5 of [`docs/report.pdf`](docs/report.pdf).
+
+### A preserved bug
+
+[`legacy/`](legacy/README.md) keeps one deliberately broken notebook: the Version 2
+client that returned an `LLMReply` nothing had defined. It never crashed — the narrator
+caught the `NameError` and quietly fell back to engine facts, so the game "worked"
+without ever calling a model. It is kept because that is the more useful artefact, and
+because both bugs it represents only appear **with** an API key configured.
 
 ---
 
@@ -121,6 +145,22 @@ in [`docs/test_cases.md`](docs/test_cases.md).
 
 ---
 
+## Demonstration
+
+Both interfaces, running locally:
+
+| Screenshot | What it shows |
+|---|---|
+| [`docs/screenshots/01-version1-ui.png`](docs/screenshots/01-version1-ui.png) | Version 1 mid-game, with the leaked system prompt expanded in the right-hand column |
+| [`docs/screenshots/02-version2-ui.png`](docs/screenshots/02-version2-ui.png) | Version 2 mid-game: the state panel, the inventory, and the "who decided what" trace |
+| [`docs/screenshots/03-version2-refusal.png`](docs/screenshots/03-version2-refusal.png) | Version 2 refusing an administrator impersonation and pointing at the dial |
+
+The notebooks additionally carry the full textual record: Version 1 §5 holds the five
+attack prompts *with the model's real answers*, and Version 2 §7 holds a complete
+play-through with the engine's verdict on every move.
+
+---
+
 ## Run it
 
 ```bash
@@ -159,25 +199,36 @@ a 404 or a 429 degrades instead of breaking the session.
 
 ```
 .
-├── Version1_Interactive_EscapeRoom.ipynb   deliverable 1 — executed
+├── Version1_Interactive_EscapeRoom.ipynb   deliverable 1 — executed, with real model replies
 ├── Version2_Reliable_EscapeRoom.ipynb      deliverable 2 — executed
 ├── requirements.txt
 ├── .env.example
-└── docs/
-    ├── report.pdf          3-page write-up (design, implementation, problems)
-    ├── report.docx         same, editable
-    ├── architecture_v1.png
-    ├── architecture_v2.png
-    └── test_cases.md       the twelve cases in full
+├── docs/
+│   ├── report.pdf          3-page write-up (design, implementation, problems)
+│   ├── report.docx         same, editable
+│   ├── architecture_v1.png
+│   ├── architecture_v2.png
+│   ├── test_cases.md       the twelve cases in full
+│   └── screenshots/        the three captures referenced above
+└── legacy/
+    ├── README.md                       what went wrong, and why it is kept
+    └── Version2_broken_client.ipynb    the broken build — do not run
 ```
 
 ---
 
-## Requirements
+## Technologies
 
-- Python 3.10 or newer
-- `gradio` (the notebook UI), `requests` (the model calls)
-- No GPU, no training, no fine-tuning
+| Piece | Choice | Why |
+|---|---|---|
+| Language | Python 3.10+ (3.14 here) | required by the brief |
+| Interface | Gradio 5/6 | already available; `Chatbot` + `State` cover the whole UI |
+| Model access | Google Gemini REST API, plain `requests` | no SDK to install, and the request shape stays visible in the notebook |
+| Cost | free tier only | no billing account; a 429 degrades to the next model, then to engine facts |
+| Room model | JSON + dataclasses | the room is data, not prose |
+| Delivery | Jupyter notebooks | self-contained and readable without running anything |
+
+No GPU, no training, no fine-tuning.
 
 ---
 
